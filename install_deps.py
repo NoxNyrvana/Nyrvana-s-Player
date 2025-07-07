@@ -1,7 +1,9 @@
 import subprocess
 import sys
+import os
+import platform
 
-# Liste des dépendances nécessaires
+# Liste des packages nécessaires
 required = [
     "PyQt6",
     "pygame",
@@ -9,18 +11,30 @@ required = [
     "pyqtgraph",
     "pydub",
     "yt_dlp",
-    "numpy"
+    "numpy",
+    "pyaudio"  # Ajouté si requis
 ]
 
 def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", package])
-
-print("Installation des dépendances...")
-for pkg in required:
+    # Python >= 3.11 supporte --break-system-packages sur Linux
+    pip_cmd = [sys.executable, "-m", "pip", "install", "--upgrade", package]
+    
+    if platform.system() == "Linux":
+        pip_cmd += ["--break-system-packages"]
+    
     try:
-        install(pkg)
-        print(f"✅ {pkg} installé")
+        subprocess.check_call(pip_cmd)
+        print(f"✅ {package} installé avec succès")
     except subprocess.CalledProcessError:
-        print(f"❌ Erreur lors de l'installation de {pkg}")
+        print(f"❌ Échec de l'installation de {package}")
 
-print("✅ Installation terminée.")
+# Si audioop est manquant → avertir (car non installable via pip)
+try:
+    import audioop
+except ImportError:
+    print("⚠️ Module 'audioop' manquant. Assure-toi d'utiliser une version standard de Python (pas embeddable).")
+
+print("📦 Installation des dépendances Python...")
+for pkg in required:
+    install(pkg)
+
