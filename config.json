@@ -1,0 +1,63 @@
+{
+    "window": {
+        "width": 270,
+        "height": 450,
+        "background_color": "#e66100",
+        "background_image_path": "/home/nyrvana/Desktop/blank/assets/images/0x1900-000000-80-0-0.jpg"
+    },
+    "buttons": {
+        "font_family": "Arial",
+        "font_size": 6,
+        "color": "#FFFFFF",
+        "shape": "rounded",
+        "play": {
+            "shape": "rounded",
+            "color": "#f6d32d",
+            "size": [
+                35,
+                35
+            ],
+            "image_path": ""
+        },
+        "rewind": {
+            "shape": "rounded",
+            "color": "#000000",
+            "size": [
+                30,
+                30
+            ],
+            "image_path": ""
+        },
+        "forward": {
+            "shape": "rounded",
+            "color": "#000000",
+            "size": [
+                30,
+                30
+            ],
+            "image_path": ""
+        },
+        "rewind_backward": {
+            "shape": "rounded",
+            "color": "#000000",
+            "size": [
+                30,
+                30
+            ],
+            "image_path": "/home/nyrvana/Desktop/blank/assets/images/8a660ebd6451557a4b290a820fef014bb103ca64dd669a1fc063535279511273._SX1080_FMjpg_.jpg"
+        },
+        "text_color": "#000000"
+    },
+    "progress_bar": {
+        "color": "#ffbe6f",
+        "background_color": "#e66100",
+        "height": 10,
+        "radius": 10
+    },
+    "visualizer": {
+        "num_bars": 60,
+        "color_start": "#ffffff",
+        "color_end": "#ffffff",
+        "intensity": 10.0
+    }
+}
