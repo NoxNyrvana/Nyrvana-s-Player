@@ -1,6 +1,10 @@
 import sys
 import os
 import json
+
+ffmpeg_bin_path = os.path.join(os.path.dirname(sys.executable), "ffmpeg", "bin")
+os.environ["PATH"] = ffmpeg_bin_path + os.pathsep + os.environ.get("PATH", "")
+
 import subprocess
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
@@ -127,9 +131,9 @@ class MusicApp(QWidget):
             btn.clicked.connect(callback)
             return btn
 
-        self.config_button = create_btn_from_config("⚙️", self.launch_config_ui)
-        self.search_button = create_btn_from_config("🔍", self.launch_research_ui)
-        self.reload_button = create_btn_from_config("↩️", self.reload_app)
+        self.config_button = create_btn_from_config("☼", self.launch_config_ui)
+        self.search_button = create_btn_from_config("♫", self.launch_research_ui)
+        self.reload_button = create_btn_from_config("⤷", self.reload_app)
         self.btn_minimize = create_btn_from_config("—", self.showMinimized)
         self.btn_close = create_btn_from_config("✕", self.close)
 
@@ -220,9 +224,9 @@ class MusicApp(QWidget):
             btn.clicked.connect(handler)
             return btn
 
-        self.buttons["rewind"] = create_btn("rewind", "⏮️", self.on_skip_back)
-        self.buttons["play"] = create_btn("play", "▶️", self.on_toggle_play_pause)
-        self.buttons["forward"] = create_btn("forward", "⏭️", self.on_skip)
+        self.buttons["rewind"] = create_btn("rewind", "❮❮", self.on_skip_back)
+        self.buttons["play"] = create_btn("play", "➤", self.on_toggle_play_pause)
+        self.buttons["forward"] = create_btn("forward", "❯❯", self.on_skip)
 
         for btn in ["rewind", "play", "forward"]:
             controls.addWidget(self.buttons[btn])
@@ -230,7 +234,7 @@ class MusicApp(QWidget):
 
         # ----- Volume -----
         volume_layout = QHBoxLayout()
-        self.volume_label = QLabel("🔊")
+        self.volume_label = QLabel("❘❘❙❙")
         self.volume_label.setFont(self.app_font)
         self.volume_label.setStyleSheet("background: transparent;")
 
@@ -298,8 +302,15 @@ class MusicApp(QWidget):
         if dur > 0:
             self.progress_bar.setValue(int((pos / dur) * 1000))
             self.time_label.setText(f"{ms_to_mmss(pos)} / {ms_to_mmss(dur)}")
-            if pos >= dur - 100:
+
+
+            if pos >= dur - 200 and not self.track_finished:
+                self.track_finished = True
                 self.on_skip()
+            elif pos < dur - 500:
+                # Reset si on revient en arrière (ex : seek manuel)
+                self.track_finished = False
+
         else:
             self.progress_bar.setValue(0)
             self.time_label.setText("00:00 / 00:00")
@@ -324,16 +335,17 @@ class MusicApp(QWidget):
         if self.is_playing:
             pause_music()
             self.is_playing = False
-            self.buttons["play"].setText("▶️")
+            self.buttons["play"].setText("➤")
         else:
             play_music()
             self.is_playing = True
-            self.buttons["play"].setText("⏸️")
+            self.buttons["play"].setText("ןן")
 
     def on_skip(self):
         i = (get_current_index() + 1) % len(playlist)
         set_current_index(i)
         load_track_by_index(i)
+        self.track_finished = False
         self.update_track_label()
         self.visualizer.load_audio(playlist[i])
         if self.is_playing:
@@ -351,13 +363,13 @@ class MusicApp(QWidget):
     def on_volume_change(self, value):
         set_volume(value / 100)
         if value == 0:
-            self.volume_label.setText("🔇")
+            self.volume_label.setText(" ")
         elif value < 30:
-            self.volume_label.setText("🔈")
+            self.volume_label.setText(" ")
         elif value < 70:
-            self.volume_label.setText("🔉")
+            self.volume_label.setText(" ")
         else:
-            self.volume_label.setText("🔊")
+            self.volume_label.setText(" ")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
