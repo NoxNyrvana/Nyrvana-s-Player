@@ -1,40 +1,49 @@
 import subprocess
 import sys
-import os
 import platform
 
-# Liste des packages nécessaires
-required = [
-    "PyQt6",
-    "pygame",
-    "mutagen",
-    "pyqtgraph",
-    "pydub",
-    "yt_dlp",
-    "numpy",
-    "pyaudio"  # Ajouté si requis
+# Liste propre des vraies dépendances nécessaires (à adapter si besoin)
+DEPENDENCIES = [
+    "pyaudio",      # interface audio
+    "pygame",       # moteur audio
+    "pyqtgraph",    # graphique
+    "PyQt6",        # interface utilisateur
+    "mutagen",      # métadonnées audio
+    "pydub",        # traitement audio
+    "yt-dlp",       # téléchargement youtube
+    "numpy"         # calcul numérique
 ]
 
-def install(package):
-    # Python >= 3.11 supporte --break-system-packages sur Linux
-    pip_cmd = [sys.executable, "-m", "pip", "install", "--upgrade", package]
+def install_package(package):
+    command = [sys.executable, "-m", "pip", "install", "--upgrade", package]
     
+    # Ajout de --break-system-packages si sur Linux
     if platform.system() == "Linux":
-        pip_cmd += ["--break-system-packages"]
-    
+        command.append("--break-system-packages")
+
     try:
-        subprocess.check_call(pip_cmd)
-        print(f"✅ {package} installé avec succès")
+        print(f"📦 Installation de {package}...")
+        subprocess.check_call(command)
     except subprocess.CalledProcessError:
-        print(f"❌ Échec de l'installation de {package}")
+        print(f"❌ Échec de l'installation de {package}. Vérifie ta connexion ou ton environnement.")
 
-# Si audioop est manquant → avertir (car non installable via pip)
-try:
-    import audioop
-except ImportError:
-    print("⚠️ Module 'audioop' manquant. Assure-toi d'utiliser une version standard de Python (pas embeddable).")
+def check_audioop():
+    try:
+        import audioop
+        print("✅ Le module standard 'audioop' est présent.")
+    except ImportError:
+        print("⚠️ 'audioop' est manquant ! Installe un Python complet (non embeddable).")
 
-print("📦 Installation des dépendances Python...")
-for pkg in required:
-    install(pkg)
+def main():
+    print("🚀 Installation des dépendances Python pour le projet...\n")
+    for package in DEPENDENCIES:
+        install_package(package)
+
+    print("\n🔍 Vérification de la présence du module standard 'audioop'...")
+    check_audioop()
+
+    print("\n✅ Installation terminée.")
+
+if __name__ == "__main__":
+    main()
 
