@@ -304,12 +304,13 @@ class MusicApp(QWidget):
             self.time_label.setText(f"{ms_to_mmss(pos)} / {ms_to_mmss(dur)}")
 
 
-            if pos >= dur - 200 and not self.track_finished:
-                self.track_finished = True
-                self.on_skip()
-            elif pos < dur - 500:
-                # Reset si on revient en arrière (ex : seek manuel)
-                self.track_finished = False
+            if not self.track_finished:
+                if pos >= dur - 500:
+                    self.track_finished = True
+                    self.on_skip()
+            else:
+                if pos < dur - 1000:
+                    self.track_finished = False
 
         else:
             self.progress_bar.setValue(0)
