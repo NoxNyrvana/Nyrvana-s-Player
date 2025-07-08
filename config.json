@@ -21,7 +21,7 @@
         },
         "rewind": {
             "shape": "rounded",
-            "color": "#000000",
+            "color": "#ffa348",
             "size": [
                 30,
                 30
@@ -30,7 +30,7 @@
         },
         "forward": {
             "shape": "rounded",
-            "color": "#000000",
+            "color": "#ffa348",
             "size": [
                 30,
                 30
@@ -38,15 +38,24 @@
             "image_path": ""
         },
         "rewind_backward": {
-            "shape": "rounded",
-            "color": "#000000",
+            "shape": "square",
+            "color": "#f9f06b",
             "size": [
                 30,
                 30
             ],
             "image_path": "/home/nyrvana/Desktop/blank/assets/images/8a660ebd6451557a4b290a820fef014bb103ca64dd669a1fc063535279511273._SX1080_FMjpg_.jpg"
         },
-        "text_color": "#000000"
+        "text_color": "#000000",
+        "header": {
+            "shape": "rounded",
+            "color": "#c64600",
+            "size": [
+                50,
+                50
+            ],
+            "image_path": ""
+        }
     },
     "progress_bar": {
         "color": "#ffbe6f",
