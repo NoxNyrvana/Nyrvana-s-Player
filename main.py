@@ -18,18 +18,15 @@ from core.actions import (
 
 from core.visualizer import AudioVisualizer
 
-
 def ms_to_mmss(ms: int) -> str:
     seconds = ms // 1000
     return f"{seconds // 60:02}:{seconds % 60:02}"
-
 
 def load_config(path="config.json") -> dict:
     if not os.path.isfile(path):
         return {}
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
-
 
 class MusicApp(QWidget):
     def __init__(self):
@@ -56,18 +53,14 @@ class MusicApp(QWidget):
         width = cfg.get("width", 270)
         height = cfg.get("height", 450)
 
-        # FIXE la taille et EMPÊCHE tout redimensionnement
         self.setFixedSize(width, height)
         self.setWindowTitle(cfg.get("title", "Lecteur de musique"))
 
         bg_color = cfg.get("background_color", "#9141ac")
         self.setStyleSheet(f"background-color: {bg_color};")
 
-        # Supprime le bouton maximise pour éviter redimensionnement indirect
         self.setWindowFlag(Qt.WindowType.WindowMinimizeButtonHint, True)
         self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
-
-        # Fenêtre sans bordure pour plus de contrôle (optionnel)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
 
         bg_path = cfg.get("background_image_path", "")
@@ -99,20 +92,46 @@ class MusicApp(QWidget):
         title_bar.addWidget(self.title)
         title_bar.addStretch()
 
-        def make_title_btn(emoji, callback):
-            btn = QPushButton(emoji)
-            btn.setFixedSize(24, 24)
+        def create_btn_from_config(symbol, callback):
+            cfg = self.config.get("buttons", {}).get("rewind_backward", {})
+            size = cfg.get("size", [30, 30])
+            color = cfg.get("color", "#ffffff")
+            text_color = cfg.get("text_color", "#000000")
+            shape = cfg.get("shape", "")
+            border_radius = 8 if shape == "rounded" else 0
+            image_path = cfg.get("image_path", "")
+
+            btn = QPushButton(symbol)
             btn.setFont(self.app_font)
-            btn.setStyleSheet("background: transparent; color: white; font-size: 14px;")
+            btn.setFixedSize(*size)
+
+            if image_path and os.path.isfile(image_path):
+                btn.setText("")
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {color};
+                        border-radius: {border_radius}px;
+                        background-image: url({image_path});
+                        background-repeat: no-repeat;
+                        background-position: center;
+                        border: none;
+                    }}
+                """)
+            else:
+                btn.setStyleSheet(f"""
+                    background-color: {color};
+                    color: {text_color};
+                    border-radius: {border_radius}px;
+                """)
+
             btn.clicked.connect(callback)
             return btn
 
-        self.config_button = make_title_btn("⚙️", self.launch_config_ui)
-        self.search_button = make_title_btn("🔍", self.launch_research_ui)
-        self.reload_button = make_title_btn("↩️", self.reload_app)
-        self.btn_minimize = make_title_btn("—", self.showMinimized)
-        # On ne propose pas de bouton maximise car fenêtre non redimensionnable
-        self.btn_close = make_title_btn("✕", self.close)
+        self.config_button = create_btn_from_config("⚙️", self.launch_config_ui)
+        self.search_button = create_btn_from_config("🔍", self.launch_research_ui)
+        self.reload_button = create_btn_from_config("↩️", self.reload_app)
+        self.btn_minimize = create_btn_from_config("—", self.showMinimized)
+        self.btn_close = create_btn_from_config("✕", self.close)
 
         for btn in [self.config_button, self.search_button, self.reload_button,
                     self.btn_minimize, self.btn_close]:
@@ -136,16 +155,23 @@ class MusicApp(QWidget):
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 1000)
         self.progress_bar.setTextVisible(False)
-        self.progress_bar.setFixedHeight(10)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                background-color: #350b4a;
-                border-radius: 10px;
-            }
-            QProgressBar::chunk {
-                background-color: #d09dd2;
-                border-radius: 10px;
-            }
+
+        pb_cfg = self.config.get("progress_bar", {})
+        chunk_color = pb_cfg.get("color", "#d09dd2")
+        bg_color = pb_cfg.get("background_color", "#350b4a")
+        radius = pb_cfg.get("radius", 10)
+        height = pb_cfg.get("height", 10)
+
+        self.progress_bar.setFixedHeight(height)
+        self.progress_bar.setStyleSheet(f"""
+            QProgressBar {{
+                background-color: {bg_color};
+                border-radius: {radius}px;
+            }}
+            QProgressBar::chunk {{
+                background-color: {chunk_color};
+                border-radius: {radius}px;
+            }}
         """)
         self.progress_bar.mousePressEvent = self.progress_clicked
         main_layout.addWidget(self.progress_bar)
@@ -160,17 +186,43 @@ class MusicApp(QWidget):
         controls = QHBoxLayout()
         self.buttons = {}
 
-        def create_btn(symbol, handler):
+        def create_btn(name, symbol, handler):
+            cfg = self.config.get("buttons", {}).get(name, {})
+            size = cfg.get("size", [30, 30])
+            color = cfg.get("color", "#613583")
+            text_color = self.config.get("buttons", {}).get("text_color", "#FFFFFF")
+            border_radius = 8 if cfg.get("shape", "") == "rounded" else 0
+            image_path = cfg.get("image_path", "")
+
             btn = QPushButton(symbol)
             btn.setFont(self.app_font)
-            btn.setFixedSize(30, 30)
-            btn.setStyleSheet("background-color: #613583; color: white; border-radius: 8px;")
+            btn.setFixedSize(*size)
+
+            if image_path and os.path.isfile(image_path):
+                btn.setText("")
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {color};
+                        border-radius: {border_radius}px;
+                        background-image: url({image_path});
+                        background-repeat: no-repeat;
+                        background-position: center;
+                        border: none;
+                    }}
+                """)
+            else:
+                btn.setStyleSheet(f"""
+                    background-color: {color};
+                    color: {text_color};
+                    border-radius: {border_radius}px;
+                """)
+
             btn.clicked.connect(handler)
             return btn
 
-        self.buttons["rewind"] = create_btn("⏮️", self.on_skip_back)
-        self.buttons["play"] = create_btn("▶️", self.on_toggle_play_pause)
-        self.buttons["forward"] = create_btn("⏭️", self.on_skip)
+        self.buttons["rewind"] = create_btn("rewind", "⏮️", self.on_skip_back)
+        self.buttons["play"] = create_btn("play", "▶️", self.on_toggle_play_pause)
+        self.buttons["forward"] = create_btn("forward", "⏭️", self.on_skip)
 
         for btn in ["rewind", "play", "forward"]:
             controls.addWidget(self.buttons[btn])
@@ -307,9 +359,6 @@ class MusicApp(QWidget):
         else:
             self.volume_label.setText("🔊")
 
-    # Suppression du toggle maximize puisque redimension interdit
-    # On ignore la fonction toggle_maximize_restore
-
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_pos = event.globalPosition().toPoint()
@@ -322,7 +371,6 @@ class MusicApp(QWidget):
 
     def mouseReleaseEvent(self, event):
         self._drag_pos = None
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
