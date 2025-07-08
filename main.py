@@ -37,6 +37,7 @@ class MusicApp(QWidget):
         super().__init__()
         self.config = load_config()
         self.is_playing = False
+        self.track_finished = False
         self._drag_pos = None
 
         self.setup_window()
@@ -281,6 +282,7 @@ class MusicApp(QWidget):
         if playlist:
             set_current_index(0)
             load_track_by_index(0)
+            self.track_finished = False
             self.list_widget.setCurrentRow(0)
             self.update_track_label()
             self.visualizer.load_audio(playlist[get_current_index()])
@@ -327,6 +329,7 @@ class MusicApp(QWidget):
         if 0 <= i < len(playlist):
             set_current_index(i)
             load_track_by_index(i)
+            self.track_finished = False
             self.update_track_label()
             self.visualizer.load_audio(playlist[i])
             if self.is_playing:
@@ -356,6 +359,7 @@ class MusicApp(QWidget):
         i = (get_current_index() - 1) % len(playlist)
         set_current_index(i)
         load_track_by_index(i)
+        self.track_finished = False
         self.update_track_label()
         self.visualizer.load_audio(playlist[i])
         if self.is_playing:
