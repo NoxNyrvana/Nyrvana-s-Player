@@ -6,6 +6,7 @@ pygame.mixer.init()
 playlist = []
 current_index = -1
 last_seek_position = 0
+is_paused = False
 
 def load_playlist_from_folder(folder_path):
     global playlist, current_index
@@ -18,6 +19,13 @@ def load_playlist_from_folder(folder_path):
 def get_current_index():
     global current_index
     return current_index
+
+def get_current_position_ms():
+    global last_seek_position
+    pos = pygame.mixer.music.get_pos()
+    if pos < 0:
+        return get_current_track_duration_ms()
+    return last_seek_position + pos
 
 def set_current_index(index):
     """Change l'index global de la piste courante."""
@@ -33,13 +41,20 @@ def load_track_by_index(index):
         pygame.mixer.music.load(playlist[index])
 
 def play_music():
-    global last_seek_position
-    if current_index == -1 and len(playlist) > 0:
-        load_track_by_index(0)
-    pygame.mixer.music.play(start=last_seek_position / 1000)
+    global last_seek_position, is_paused
+    if pygame.mixer.music.get_busy() and is_paused:
+        pygame.mixer.music.unpause()
+    else:
+        if current_index == -1 and len(playlist) > 0:
+            load_track_by_index(0)
+        pygame.mixer.music.play(start=last_seek_position / 1000)
+    is_paused = False
 
 def pause_music():
+    global is_paused, last_seek_position
+    last_seek_position = get_current_position_ms()
     pygame.mixer.music.pause()
+    is_paused = True
 
 def stop_music():
     pygame.mixer.music.stop()
@@ -67,9 +82,8 @@ def set_volume(vol):
     pygame.mixer.music.set_volume(vol)
 
 def get_current_position_ms():
-    global last_seek_position
     pos = pygame.mixer.music.get_pos()
-    if pos == -1:
+    if pos < 0:
         return last_seek_position
     return last_seek_position + pos
 
