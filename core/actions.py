@@ -1,12 +1,17 @@
 import os
+import time
 import pygame
 from mutagen.mp3 import MP3
 
 pygame.mixer.init()
 playlist = []
 current_index = -1
+
+# Temps en ms où la lecture a été mise en pause (ou position de départ)
 last_seek_position = 0
-is_paused = False
+
+# Timestamp (en secondes) du moment où la musique a été lancée/reprise
+play_start_time = None
 
 def load_playlist_from_folder(folder_path):
     global playlist, current_index
@@ -20,87 +25,82 @@ def get_current_index():
     global current_index
     return current_index
 
-def get_current_position_ms():
-    global last_seek_position
-    pos = pygame.mixer.music.get_pos()
-    if pos < 0:
-        return get_current_track_duration_ms()
-    return last_seek_position + pos
-
 def set_current_index(index):
-    """Change l'index global de la piste courante."""
-    global current_index
-    if 0 <= index < len(playlist):
-        current_index = index
-
-def load_track_by_index(index):
-    global current_index, last_seek_position
+    global current_index, last_seek_position, play_start_time
     if 0 <= index < len(playlist):
         current_index = index
         last_seek_position = 0
+        play_start_time = None
+
+def load_track_by_index(index):
+    global current_index, last_seek_position, play_start_time
+    if 0 <= index < len(playlist):
+        current_index = index
+        last_seek_position = 0
+        play_start_time = None
         pygame.mixer.music.load(playlist[index])
 
 def play_music():
-    global last_seek_position, is_paused
-    if pygame.mixer.music.get_busy() and is_paused:
-        pygame.mixer.music.unpause()
-    else:
-        if current_index == -1 and len(playlist) > 0:
-            load_track_by_index(0)
-        pygame.mixer.music.play(start=last_seek_position / 1000)
-    is_paused = False
+    global play_start_time
+    if current_index == -1 and len(playlist) > 0:
+        load_track_by_index(0)
+    pygame.mixer.music.play(start=last_seek_position / 1000)
+    play_start_time = time.time()
 
 def pause_music():
-    global is_paused, last_seek_position
-    last_seek_position = get_current_position_ms()
+    global last_seek_position, play_start_time
+    if play_start_time is not None:
+        elapsed_ms = int((time.time() - play_start_time) * 1000)
+        last_seek_position += elapsed_ms
+        play_start_time = None
     pygame.mixer.music.pause()
-    is_paused = True
 
 def stop_music():
+    global last_seek_position, play_start_time
     pygame.mixer.music.stop()
+    last_seek_position = 0
+    play_start_time = None
 
 def skip_track():
-    global current_index, last_seek_position
-    if len(playlist) == 0:
+    global current_index
+    if not playlist:
         return
-    current_index += 1
-    if current_index >= len(playlist):
-        current_index = 0
-    last_seek_position = 0
-    load_track_by_index(current_index)
+    new_index = (current_index + 1) % len(playlist)
+    set_current_index(new_index)
+    load_track_by_index(new_index)
     play_music()
 
 def rewind_track():
-    """Remet la piste au début."""
-    global last_seek_position
-    if current_index == -1:
-        return
+    global last_seek_position, play_start_time
     last_seek_position = 0
+    play_start_time = time.time()
     pygame.mixer.music.play(start=0)
 
 def set_volume(vol):
     pygame.mixer.music.set_volume(vol)
 
 def get_current_position_ms():
-    pos = pygame.mixer.music.get_pos()
-    if pos < 0:
+    global last_seek_position, play_start_time
+    if play_start_time is None:
         return last_seek_position
-    return last_seek_position + pos
+    elapsed_ms = int((time.time() - play_start_time) * 1000)
+    return last_seek_position + elapsed_ms
 
 def get_current_track_duration_ms():
-    if current_index == -1 or len(playlist) == 0:
+    if current_index == -1 or not playlist:
         return 0
     try:
         audio = MP3(playlist[current_index])
         return int(audio.info.length * 1000)
-    except:
+    except Exception:
         return 0
 
 def seek_to_position(ms):
-    global last_seek_position
+    global last_seek_position, play_start_time
     if current_index == -1:
         return
     last_seek_position = ms
+    play_start_time = time.time()
     pygame.mixer.music.load(playlist[current_index])
     pygame.mixer.music.play(start=ms / 1000)
 
