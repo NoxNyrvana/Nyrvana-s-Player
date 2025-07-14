@@ -1,30 +1,27 @@
 import sys
 import os
 import json
-
-ffmpeg_bin_path = os.path.join(os.path.dirname(sys.executable), "ffmpeg", "bin")
-os.environ["PATH"] = ffmpeg_bin_path + os.pathsep + os.environ.get("PATH", "")
-
 import subprocess
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QProgressBar, QListWidget, QSlider
 )
-from PyQt6.QtCore import Qt, QTimer, QPoint
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QFont
-
 from core.actions import (
     load_playlist_from_folder, play_music, pause_music, stop_music,
     load_track_by_index, get_current_position_ms, get_current_track_duration_ms,
     set_volume, playlist, get_current_track_name, get_current_index, set_current_index,
     seek_to_position
 )
-
 from core.visualizer import AudioVisualizer
+import pygame  # Assure-toi que pygame est importé ici
+
 
 def ms_to_mmss(ms: int) -> str:
     seconds = ms // 1000
     return f"{seconds // 60:02}:{seconds % 60:02}"
+
 
 def load_config(path="config.json") -> dict:
     if not os.path.isfile(path):
@@ -32,11 +29,13 @@ def load_config(path="config.json") -> dict:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 class MusicApp(QWidget):
     def __init__(self):
         super().__init__()
         self.config = load_config()
         self.is_playing = False
+        self.is_looping = False
         self.track_finished = False
         self._drag_pos = None
 
@@ -50,7 +49,6 @@ class MusicApp(QWidget):
         self.timer.start()
 
         self.on_volume_change(self.volume_slider.value())
-
         self.show()
 
     def setup_window(self):
@@ -60,7 +58,6 @@ class MusicApp(QWidget):
 
         self.setFixedSize(width, height)
         self.setWindowTitle(cfg.get("title", "Lecteur de musique"))
-
         bg_color = cfg.get("background_color", "#9141ac")
         self.setStyleSheet(f"background-color: {bg_color};")
 
@@ -87,7 +84,6 @@ class MusicApp(QWidget):
         font_size = btn_cfg.get("font_size", 14)
         self.app_font = QFont(font_family, font_size)
 
-        # ----- barre titre ---------------
         title_bar = QHBoxLayout()
         title_bar.setSpacing(5)
 
@@ -112,23 +108,9 @@ class MusicApp(QWidget):
 
             if image_path and os.path.isfile(image_path):
                 btn.setText("")
-                btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {color};
-                        border-radius: {border_radius}px;
-                        background-image: url({image_path});
-                        background-repeat: no-repeat;
-                        background-position: center;
-                        border: none;
-                    }}
-                """)
+                btn.setStyleSheet(f"background-color: {color}; border-radius: {border_radius}px; background-image: url({image_path}); background-repeat: no-repeat; background-position: center; border: none;")
             else:
-                btn.setStyleSheet(f"""
-                    background-color: {color};
-                    color: {text_color};
-                    border-radius: {border_radius}px;
-                """)
-
+                btn.setStyleSheet(f"background-color: {color}; color: {text_color}; border-radius: {border_radius}px;")
             btn.clicked.connect(callback)
             return btn
 
@@ -138,13 +120,10 @@ class MusicApp(QWidget):
         self.btn_minimize = create_btn_from_config("—", self.showMinimized)
         self.btn_close = create_btn_from_config("✕", self.close)
 
-        for btn in [self.config_button, self.search_button, self.reload_button,
-                    self.btn_minimize, self.btn_close]:
+        for btn in [self.config_button, self.search_button, self.reload_button, self.btn_minimize, self.btn_close]:
             title_bar.addWidget(btn)
-
         main_layout.addLayout(title_bar)
 
-        # ----- playlist -------------------
         self.list_widget = QListWidget()
         self.list_widget.setFont(self.app_font)
         self.list_widget.clicked.connect(self.select_track)
@@ -156,11 +135,9 @@ class MusicApp(QWidget):
         self.track_label.setStyleSheet("color: white; background: transparent;")
         main_layout.addWidget(self.track_label)
 
-        # ----- Barre de progression -----
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 1000)
         self.progress_bar.setTextVisible(False)
-
         pb_cfg = self.config.get("progress_bar", {})
         chunk_color = pb_cfg.get("color", "#d09dd2")
         bg_color = pb_cfg.get("background_color", "#350b4a")
@@ -168,27 +145,10 @@ class MusicApp(QWidget):
         height = pb_cfg.get("height", 10)
 
         self.progress_bar.setFixedHeight(height)
-        self.progress_bar.setStyleSheet(f"""
-            QProgressBar {{
-                background-color: {bg_color};
-                border-radius: {radius}px;
-            }}
-            QProgressBar::chunk {{
-                background-color: {chunk_color};
-                border-radius: {radius}px;
-            }}
-        """)
+        self.progress_bar.setStyleSheet(f"QProgressBar {{background-color: {bg_color}; border-radius: {radius}px;}} QProgressBar::chunk {{background-color: {chunk_color}; border-radius: {radius}px;}}");
         self.progress_bar.mousePressEvent = self.progress_clicked
         main_layout.addWidget(self.progress_bar)
 
-        self.time_label = QLabel("00:00 / 00:00")
-        self.time_label.setFont(self.app_font)
-        self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.time_label.setStyleSheet("color: white; background: transparent;")
-        main_layout.addWidget(self.time_label)
-
-        # ----- controles musique -------------
-        controls = QHBoxLayout()
         self.buttons = {}
 
         def create_btn(name, symbol, handler):
@@ -198,33 +158,37 @@ class MusicApp(QWidget):
             text_color = self.config.get("buttons", {}).get("text_color", "#FFFFFF")
             border_radius = 8 if cfg.get("shape", "") == "rounded" else 0
             image_path = cfg.get("image_path", "")
-
             btn = QPushButton(symbol)
             btn.setFont(self.app_font)
             btn.setFixedSize(*size)
-
             if image_path and os.path.isfile(image_path):
                 btn.setText("")
-                btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {color};
-                        border-radius: {border_radius}px;
-                        background-image: url({image_path});
-                        background-repeat: no-repeat;
-                        background-position: center;
-                        border: none;
-                    }}
-                """)
+                btn.setStyleSheet(f"background-color: {color}; border-radius: {border_radius}px; background-image: url({image_path}); background-repeat: no-repeat; background-position: center; border: none;")
             else:
-                btn.setStyleSheet(f"""
-                    background-color: {color};
-                    color: {text_color};
-                    border-radius: {border_radius}px;
-                """)
-
+                btn.setStyleSheet(f"background-color: {color}; color: {text_color}; border-radius: {border_radius}px;")
             btn.clicked.connect(handler)
             return btn
 
+        time_layout = QHBoxLayout()
+        time_layout.addStretch(1)
+
+        self.time_label = QLabel("00:00 / 00:00")
+        self.time_label.setFont(self.app_font)
+        self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.time_label.setStyleSheet("color: white; background: transparent;")
+        
+        self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.time_label.setFixedWidth(260) 
+        time_layout.addWidget(self.time_label)
+
+        self.buttons["loop"] = create_btn("loop", "↻", self.on_toggle_loop)
+        self.loop_btn_original_style = self.buttons["loop"].styleSheet()
+        time_layout.addStretch(1)
+        time_layout.addWidget(self.buttons["loop"])
+
+        main_layout.addLayout(time_layout)
+
+        controls = QHBoxLayout()
         self.buttons["rewind"] = create_btn("rewind", "❮❮", self.on_skip_back)
         self.buttons["play"] = create_btn("play", "➤", self.on_toggle_play_pause)
         self.buttons["forward"] = create_btn("forward", "❯❯", self.on_skip)
@@ -232,45 +196,61 @@ class MusicApp(QWidget):
         for btn in ["rewind", "play", "forward"]:
             controls.addWidget(self.buttons[btn])
         main_layout.addLayout(controls)
-
-        # ----- volume ------------------
+# ----------------------------------------------------------------------------
         volume_layout = QHBoxLayout()
-        self.volume_label = QLabel("❘❘❙❙")
+        self.volume_label = QLabel("🔈")
         self.volume_label.setFont(self.app_font)
         self.volume_label.setStyleSheet("background: transparent;")
 
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
+
+        vol_cfg = self.config.get("volume_bar", {})
+        height = vol_cfg.get("height", 10)
+        bg_color = vol_cfg.get("background_color", "#62a0ea")
+        slider_color = vol_cfg.get("slider_color", "#ffffff")
+        slider_shape = vol_cfg.get("slider_shape", "rounded")
+        radius = vol_cfg.get("radius", 5)
+
         self.volume_slider.setRange(0, 100)
         self.volume_slider.setValue(70)
         self.volume_slider.valueChanged.connect(self.on_volume_change)
+        self.volume_slider.setFixedHeight(height)
+
+        border_radius = radius if slider_shape == "rounded" else 0
+
+        style = f"""
+            QSlider::groove:horizontal {{
+                border-radius: {border_radius}px;
+                background: {bg_color};
+                height: {height}px;
+            }}
+            QSlider::handle:horizontal {{
+                background: {slider_color};
+                border-radius: {border_radius}px;
+                width: {int(height * 1.5)}px;
+                margin: -{height // 2}px 0;
+            }}
+        """
+        self.volume_slider.setStyleSheet(style)
 
         volume_layout.addWidget(self.volume_label)
         volume_layout.addWidget(self.volume_slider)
         main_layout.addLayout(volume_layout)
 
-        # ----- visualiseur ---------------
+# ----------------------------------------------------------------------------
         self.visualizer = AudioVisualizer()
         self.visualizer.configure(self.config)
         main_layout.addWidget(self.visualizer)
 
     def launch_config_ui(self):
-        try:
-            subprocess.Popen([sys.executable, "config_ui.py"])
-        except Exception as e:
-            print(f"Erreur lancement config_ui.py : {e}")
+        subprocess.Popen([sys.executable, "config_ui.py"])
 
     def launch_research_ui(self):
-        try:
-            subprocess.Popen([sys.executable, "research.py"])
-        except Exception as e:
-            print(f"Erreur lancement research.py : {e}")
+        subprocess.Popen([sys.executable, "research.py"])
 
     def reload_app(self):
-        try:
-            subprocess.Popen([sys.executable, "main.py"])
-            QApplication.quit()
-        except Exception as e:
-            print(f"Erreur lors du redémarrage : {e}")
+        subprocess.Popen([sys.executable, "main.py"])
+        QApplication.quit()
 
     def load_music(self):
         music_dir = os.path.join(os.getcwd(), "assets", "music")
@@ -305,18 +285,24 @@ class MusicApp(QWidget):
             self.progress_bar.setValue(int((pos / dur) * 1000))
             self.time_label.setText(f"{ms_to_mmss(pos)} / {ms_to_mmss(dur)}")
 
-
-            if not self.track_finished:
-                if pos >= dur - 500:
-                    self.track_finished = True
-                    self.on_skip()
-            else:
-                if pos < dur - 1000:
+            if pos >= dur - 500:
+                if self.is_looping:
+                    # Remet à zéro et relance la lecture en boucle
+                    seek_to_position(0)
+                    pygame.mixer.music.play(loops=-1)
                     self.track_finished = False
-
+                    self.is_playing = True
+                    self.buttons["play"].setText("❚❚")
+                else:
+                    if not self.track_finished:
+                        self.track_finished = True
+                        self.on_skip()
+            elif pos < dur - 1000:
+                self.track_finished = False
         else:
             self.progress_bar.setValue(0)
             self.time_label.setText("00:00 / 00:00")
+
         self.visualizer.update_visualizer(pos)
 
     def progress_clicked(self, event):
@@ -341,19 +327,15 @@ class MusicApp(QWidget):
             self.is_playing = False
             self.buttons["play"].setText("➤")
         else:
-            play_music()
+            pos = get_current_position_ms()
+            dur = get_current_track_duration_ms()
+            if pos >= dur or pos == 0:
+                seek_to_position(0)
+                pygame.mixer.music.play(loops=-1 if self.is_looping else 0)
+            else:
+                play_music()
             self.is_playing = True
-            self.buttons["play"].setText("ןן")
-
-    def on_skip(self):
-        i = (get_current_index() + 1) % len(playlist)
-        set_current_index(i)
-        load_track_by_index(i)
-        self.track_finished = False
-        self.update_track_label()
-        self.visualizer.load_audio(playlist[i])
-        if self.is_playing:
-            play_music()
+            self.buttons["play"].setText("❚❚")
 
     def on_skip_back(self):
         i = (get_current_index() - 1) % len(playlist)
@@ -365,31 +347,47 @@ class MusicApp(QWidget):
         if self.is_playing:
             play_music()
 
-    def on_volume_change(self, value):
-        set_volume(value / 100)
-        if value == 0:
-            self.volume_label.setText(" ")
-        elif value < 30:
-            self.volume_label.setText(" ")
-        elif value < 70:
-            self.volume_label.setText(" ")
+    def on_skip(self):
+        i = (get_current_index() + 1) % len(playlist)
+        set_current_index(i)
+        load_track_by_index(i)
+        self.track_finished = False
+        self.update_track_label()
+        self.visualizer.load_audio(playlist[i])
+        if self.is_playing:
+            play_music()
+
+    def on_toggle_loop(self):
+        self.is_looping = not self.is_looping
+        if self.is_looping:
+            bg_color = self.config.get("window", {}).get("background_color", "#9141ac")
+            new_style = self.loop_btn_original_style.replace("#613583", bg_color)
+            self.buttons["loop"].setStyleSheet(new_style)
         else:
-            self.volume_label.setText(" ")
+            self.buttons["loop"].setStyleSheet(self.loop_btn_original_style)
+
+    def on_volume_change(self, value):
+        volume_float = value / 100
+        set_volume(value / 100)
+        self.volume_label.setText("" if value > 0 else "")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint()
+            self._drag_pos = event.globalPosition()
 
     def mouseMoveEvent(self, event):
-        if event.buttons() == Qt.MouseButton.LeftButton and self._drag_pos:
-            delta = event.globalPosition().toPoint() - self._drag_pos
-            self.move(self.pos() + delta)
-            self._drag_pos = event.globalPosition().toPoint()
+        if self._drag_pos:
+            diff = event.globalPosition() - self._drag_pos
+            self.move(self.x() + diff.x(), self.y() + diff.y())
+            self._drag_pos = event.globalPosition()
 
     def mouseReleaseEvent(self, event):
         self._drag_pos = None
 
+
 if __name__ == "__main__":
+    pygame.mixer.init()
     app = QApplication(sys.argv)
-    player = MusicApp()
+    window = MusicApp()
     sys.exit(app.exec())
+
