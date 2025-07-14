@@ -287,7 +287,6 @@ class MusicApp(QWidget):
 
             if pos >= dur - 500:
                 if self.is_looping:
-                    # Remet à zéro et relance la lecture en boucle
                     seek_to_position(0)
                     pygame.mixer.music.play(loops=-1)
                     self.track_finished = False
@@ -360,7 +359,7 @@ class MusicApp(QWidget):
     def on_toggle_loop(self):
         self.is_looping = not self.is_looping
         if self.is_looping:
-            bg_color = self.config.get("window", {}).get("background_color", "#9141ac")
+            bg_color = self.config.get("window", {}).get("text_color", "#9141ac")
             new_style = self.loop_btn_original_style.replace("#613583", bg_color)
             self.buttons["loop"].setStyleSheet(new_style)
         else:
