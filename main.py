@@ -87,7 +87,7 @@ class MusicApp(QWidget):
         font_size = btn_cfg.get("font_size", 14)
         self.app_font = QFont(font_family, font_size)
 
-        # ----- Barre de titre -----
+        # ----- barre titre ---------------
         title_bar = QHBoxLayout()
         title_bar.setSpacing(5)
 
@@ -144,7 +144,7 @@ class MusicApp(QWidget):
 
         main_layout.addLayout(title_bar)
 
-        # ----- Playlist -----
+        # ----- playlist -------------------
         self.list_widget = QListWidget()
         self.list_widget.setFont(self.app_font)
         self.list_widget.clicked.connect(self.select_track)
@@ -187,7 +187,7 @@ class MusicApp(QWidget):
         self.time_label.setStyleSheet("color: white; background: transparent;")
         main_layout.addWidget(self.time_label)
 
-        # ----- Contrôles musique -----
+        # ----- controles musique -------------
         controls = QHBoxLayout()
         self.buttons = {}
 
@@ -233,7 +233,7 @@ class MusicApp(QWidget):
             controls.addWidget(self.buttons[btn])
         main_layout.addLayout(controls)
 
-        # ----- Volume -----
+        # ----- volume ------------------
         volume_layout = QHBoxLayout()
         self.volume_label = QLabel("❘❘❙❙")
         self.volume_label.setFont(self.app_font)
@@ -248,7 +248,7 @@ class MusicApp(QWidget):
         volume_layout.addWidget(self.volume_slider)
         main_layout.addLayout(volume_layout)
 
-        # ----- Visualizer -----
+        # ----- visualiseur ---------------
         self.visualizer = AudioVisualizer()
         self.visualizer.configure(self.config)
         main_layout.addWidget(self.visualizer)
