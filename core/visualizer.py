@@ -9,7 +9,6 @@ class AudioVisualizer(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Rendre le widget lui-même transparent
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet("background: transparent;")
 
@@ -17,7 +16,7 @@ class AudioVisualizer(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setBackground(None)  # fond transparent pyqtgraph
+        self.plot_widget.setBackground(None) 
         self.plot_widget.setYRange(0, 1)
         self.plot_widget.setMouseEnabled(x=False, y=False)
         self.plot_widget.hideAxis('bottom')
@@ -30,8 +29,8 @@ class AudioVisualizer(QWidget):
         self.num_bars = 30
         self.intensity = 1.0
         self.bar_width = 0.8
-        self.color_start = (0, 255, 0)  # vert
-        self.color_end = (255, 0, 0)    # rouge
+        self.color_start = (0, 255, 0) 
+        self.color_end = (255, 0, 0)  
 
         self.data = np.zeros(self.num_bars)
         self.x = np.arange(self.num_bars)
@@ -64,7 +63,7 @@ class AudioVisualizer(QWidget):
             vis_cfg = config.get("visualizer", {})
             self.num_bars = vis_cfg.get("num_bars", 30)
             self.intensity = vis_cfg.get("intensity", 1.0)
-            self.bar_width = vis_cfg.get("bar_width", 0.8)  # optionnel dans JSON
+            self.bar_width = vis_cfg.get("bar_width", 0.8) 
             colors = [
                 vis_cfg.get("color_start", "#00FF00"),
                 vis_cfg.get("color_end", "#FF0000"),
@@ -102,7 +101,7 @@ class AudioVisualizer(QWidget):
             return tuple(
                 int(color[i : i + lv // 3], 16) for i in range(0, lv, lv // 3)
             )
-        return (0, 255, 0)  # default vert
+        return (0, 255, 0)  
 
     def load_audio(self, file_path):
         self.audio_segment = AudioSegment.from_file(file_path)
@@ -113,7 +112,7 @@ class AudioVisualizer(QWidget):
             self.bar_graph.setOpts(height=self.data)
             return
 
-        window_size = 100  # fenêtre de 100 ms
+        window_size = 100 
         start = int(position_ms)
         end = min(start + window_size, len(self.audio_segment))
 
