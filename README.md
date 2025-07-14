@@ -20,3 +20,20 @@ For Linux:
 - cd ~/Desktop/blank
 2.then install dependencies using pip
 - (for the pip install you can add at the end "--break-system-packages" if you dont want to fight with the external environement)
+
+
+
+
+--------------------FAQ-------------------------
+How to delete music ?
+1. Go into the "assets" file
+2. Then go into the "music" file
+3. finally delete the music you dont want
+
+- a more efficient way to do it is planned
+
+How do i customize the interface ?
+1. Launch  the player
+2. Click on the settings logo
+3. A menu should shows up to help you customize
+
