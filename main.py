@@ -378,7 +378,9 @@ class MusicApp(QWidget):
     def mouseMoveEvent(self, event):
         if self._drag_pos:
             diff = event.globalPosition() - self._drag_pos
-            self.move(self.x() + diff.x(), self.y() + diff.y())
+            new_x = int(self.x() + diff.x())
+            new_y = int(self.y() + diff.y())
+            self.move(new_x, new_y)
             self._drag_pos = event.globalPosition()
 
     def mouseReleaseEvent(self, event):
