@@ -9,14 +9,14 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QMovie
 import yt_dlp
 
-# === Lecture de config.json ===
+# === lecture config.json ======
 def load_config(path="config.json"):
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-# === Thread pour le téléchargement ===
+# === thread téléchargement =====
 class DownloadThread(QThread):
     started_signal = pyqtSignal()
     finished_signal = pyqtSignal(str)
@@ -48,7 +48,7 @@ class DownloadThread(QThread):
         except Exception as e:
             self.error_signal.emit(str(e))
 
-# === Interface principale ===
+# === interface ===========
 class MP3DownloaderApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -76,7 +76,7 @@ class MP3DownloaderApp(QWidget):
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.status_label)
 
-        # === GIF de chargement ===
+        # === GIF loading =========
         self.loading_gif = QMovie("assets/gifs/load.gif")
         self.loading_label = QLabel()
         self.loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -95,7 +95,7 @@ class MP3DownloaderApp(QWidget):
         self.search_button.setEnabled(False)
         self.status_label.setText("🔍 Recherche et téléchargement en cours...")
 
-        # Lancer l’animation du gif
+        # animation gif
         self.loading_label.setVisible(True)
         self.loading_gif.start()
 
@@ -118,7 +118,7 @@ class MP3DownloaderApp(QWidget):
         self.loading_label.setVisible(False)
         self.loading_gif.stop()
 
-# === Point d’entrée ===
+# === porte d’entrée ==============
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MP3DownloaderApp()
