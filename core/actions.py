@@ -7,10 +7,8 @@ pygame.mixer.init()
 playlist = []
 current_index = -1
 
-# Temps en ms où la lecture a été mise en pause (ou position de départ)
 last_seek_position = 0
 
-# Timestamp (en secondes) du moment où la musique a été lancée/reprise
 play_start_time = None
 
 def load_playlist_from_folder(folder_path):
