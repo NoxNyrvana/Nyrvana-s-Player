@@ -7,8 +7,10 @@ pygame.mixer.init()
 playlist = []
 current_index = -1
 
+# Temps en ms où la lecture a été mise en pause (ou position de départ)
 last_seek_position = 0
 
+# Timestamp (en secondes) du moment où la musique a été lancée/reprise
 play_start_time = None
 
 def load_playlist_from_folder(folder_path):
@@ -52,6 +54,13 @@ def pause_music():
         last_seek_position += elapsed_ms
         play_start_time = None
     pygame.mixer.music.pause()
+
+def loop_music():
+    global play_start_time
+    if current_index == -1 and len(playlist) > 0:
+        load_track_by_index(0)
+    pygame.mixer.music.play(loops=-1, start=last_seek_position / 1000)
+    play_start_time = time.time()
 
 def stop_music():
     global last_seek_position, play_start_time
