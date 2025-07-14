@@ -358,12 +358,13 @@ class MusicApp(QWidget):
 
     def on_toggle_loop(self):
         self.is_looping = not self.is_looping
+        btn = self.buttons["loop"]
+        original_size = btn.size()
         if self.is_looping:
-            bg_color = self.config.get("window", {}).get("text_color", "#9141ac")
-            new_style = self.loop_btn_original_style.replace("#613583", bg_color)
-            self.buttons["loop"].setStyleSheet(new_style)
+            btn.setFixedSize(original_size.width() - 2, original_size.height() - 0)
         else:
-            self.buttons["loop"].setStyleSheet(self.loop_btn_original_style)
+            btn.setFixedSize(original_size.width() + 2, original_size.height() + 0)
+
 
     def on_volume_change(self, value):
         volume_float = value / 100
