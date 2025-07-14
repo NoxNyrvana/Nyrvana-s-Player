@@ -25,6 +25,7 @@ For Linux:
 
 
 --------------------FAQ-------------------------
+
 How to delete music ?
 1. Go into the "assets" file
 2. Then go into the "music" file
