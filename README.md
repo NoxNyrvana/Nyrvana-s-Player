@@ -25,6 +25,20 @@ For Linux:
 
 
 --------------------FAQ-------------------------
+How to add music ?
+1. Click on the search icon
+2. Type the name (errors in the name allowed)
+3. Click download
+
+Can i use it offline ?
+.Yes you can. All the music are downlaoded from youtube when you were online,
+all your music are stored in the assets/music folder as mp3 file 
+so you can use them for other purpose 
+
+My Custom interface wont show correctly, why ?
+.When you use a picture to customize your interface,
+and move the picture or delete it teh interface may not work.
+
 
 How to delete music ?
 1. Go into the "assets" file
@@ -33,8 +47,15 @@ How to delete music ?
 
 - a more efficient way to do it is planned
 
+
+
 How do i customize the interface ?
 1. Launch  the player
 2. Click on the settings logo
 3. A menu should shows up to help you customize
+
+
+Any recommandation of music ?
+.Yes, go listen the soundtrack of made in abyss,
+a complete masterpiece, especially "Old stories" and "Forever Lost"
 
