@@ -20,12 +20,9 @@ For Linux:
 - cd ~/Desktop/blank
 2.then install dependencies using pip
 - (for the pip install you can add at the end "--break-system-packages" if you dont want to fight with the external environement)
-.
 
-
-.
 --------------------FAQ-------------------------
-.
+
 How to add music ?
 1. Click on the search icon
 2. Type the name (errors in the name allowed)
