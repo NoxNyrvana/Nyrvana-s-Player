@@ -127,6 +127,20 @@ class MusicApp(QWidget):
         self.list_widget = QListWidget()
         self.list_widget.setFont(self.app_font)
         self.list_widget.clicked.connect(self.select_track)
+        pb_cfg = self.config.get("progress_bar", {})
+        progress_bg_color = pb_cfg.get("background_color", "#350b4a")
+        
+        
+        self.list_widget.setStyleSheet(f"""
+            QListWidget::item:selected {{
+                background: {progress_bg_color};
+                color: white;
+            }}
+            QListWidget::item:selected:!active {{
+                background: {progress_bg_color};
+                color: white;
+            }}
+        """)
         main_layout.addWidget(self.list_widget)
 
         self.track_label = QLabel("")
@@ -392,4 +406,3 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MusicApp()
     sys.exit(app.exec())
-
